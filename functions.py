@@ -1,5 +1,6 @@
 import os
 import sys
+import urllib
 import logging
 import datetime
 import requests
@@ -69,6 +70,39 @@ def get_closest_store(lat, lon, radius=1500):
                    key=lambda x: x["distance"])[0]
 
     return store
+
+
+def get_products(store, categories=''):
+    """
+    Gets products list of dicts from 5ka API by store
+    :param store: dict
+    :return: list
+    """
+    products = []
+
+    last_flag = False
+
+    params = {
+        'records_per_page': 15,
+        'page': 1,
+        'store': store,
+        'ordering': '',
+        'price_promo__gte': '',
+        'price_promo__lte': '',
+        'categories': categories,
+        'search': ''
+    }
+
+    while not last_flag:
+        url = f"https://5ka.ru/api/v2/special_offers/?{urllib.parse.urlencode(params)}"
+        response = requests.get(url, headers=HEADERS).json()
+        params['page'] += 1
+        last_flag = response['next'] is None
+
+        for r in response['results']:
+            products.append(r)
+
+    return products
 
 
 def get_product_image(product):
